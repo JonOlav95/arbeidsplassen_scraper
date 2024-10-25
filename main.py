@@ -13,27 +13,7 @@ from bs4 import BeautifulSoup
 from lxml import etree
 
 from misc_helpers import load_random_headers, init_logging, previously_scraped, arbeidsplassen_xpaths
-from process_data import process_data
-
-
-def store_data(page_ads: list,
-               folder: str,
-               curr_time: str) -> None:
-    """Stores all data to a CSV.
-
-    Args:
-        page_ads: Dict where key is type of ad, and value is scrape dict.
-        folder: Where to store the data.
-        curr_time: Time string for filename.
-    """
-    filename = f'{folder}/arbeidsplassen_{curr_time}.csv'
-    df_page = pd.DataFrame(page_ads)
-
-    if os.path.isfile(filename):
-        scrape_df = pd.read_csv(filename, encoding='utf-8')
-        df_page = pd.concat([scrape_df, df_page])
-
-    df_page.to_csv(filename, index=False, encoding='utf-8')
+from process_data import process_data, store_data
 
 
 def scrape_single_ad(url: str,
@@ -96,7 +76,7 @@ def scrape_ads_list(ad_urls: list,
                     xpaths: dict,
                     scrape_folder: str,
                     curr_time: str,
-                    store_data=True) -> None:
+                    store_data_bool=True) -> None:
     """Scrape a list of ads and store the data
     
     Args:
@@ -107,7 +87,7 @@ def scrape_ads_list(ad_urls: list,
         scrape_folder: Where to store the scrape data.
         curr_time: Start time of scrape, used for filename.
         toggle: Current button toggle for search.
-        store_data: Bool deciding to save the data or not.
+        store_data_bool: Bool deciding to save the data or not.
     """
     uuid_pattern = re.compile(r'[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}')
     page_ads = []
@@ -132,7 +112,7 @@ def scrape_ads_list(ad_urls: list,
         page_ads.append(result)
         time.sleep(random.uniform(0.75, 1.5))
 
-    if store_data:
+    if store_data_bool:
         processed_ads = process_data(page_ads)
         store_data(processed_ads, scrape_folder, curr_time)
 
@@ -201,7 +181,7 @@ def iterate_pages(curr_time: str,
                         xpaths,
                         scrape_folder,
                         curr_time)
-
+    
 
 def get_toggles(full_scrape: bool,
                 base_url: str,

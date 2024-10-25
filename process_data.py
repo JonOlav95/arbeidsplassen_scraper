@@ -68,3 +68,21 @@ def process_data(page_ads):
     return processed_list
 
     
+def store_data(page_ads: list,
+               folder: str,
+               curr_time: str) -> None:
+    """Stores all data to a CSV.
+
+    Args:
+        page_ads: Dict where key is type of ad, and value is scrape dict.
+        folder: Where to store the data.
+        curr_time: Time string for filename.
+    """
+    filename = f'{folder}/arbeidsplassen_{curr_time}.csv'
+    df_page = pd.DataFrame(page_ads)
+
+    if os.path.isfile(filename):
+        scrape_df = pd.read_csv(filename, encoding='utf-8')
+        df_page = pd.concat([scrape_df, df_page])
+
+    df_page.to_csv(filename, index=False, encoding='utf-8')
