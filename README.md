@@ -3,6 +3,8 @@ Python script for scraping job advertisements from https://arbeidsplassen.nav.no
 
 The script includes the code to clean and store the data in CSV files.
 
+
+Use the code responsibly. The parameters `full_scrape` and `ignore_previously_scrape` are added as to not unnecessarily burden the server. 
 # Setup
 `mkdir scrapes`\
 `mkdir logs`\
