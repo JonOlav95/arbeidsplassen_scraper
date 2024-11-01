@@ -4,9 +4,10 @@ ignore_previously_scraped: True
 scrape_folder: 'scrapes'
 log_folder: 'logs'
 
-
 base_url: 'https://arbeidsplassen.nav.no'
 buffer_size: 50
+store_html: False
+store_only_html: False
 
 time_sleep_lower: 0.75
 time_sleep_upper: 1.5

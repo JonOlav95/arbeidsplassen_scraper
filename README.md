@@ -22,6 +22,7 @@ Parameters can be adjusted in `parameters.yml`
 | scrape_folder | string | Which folder to store the scraped data. |
 | log_folder | string | Which folder to store logs. |
 | base_url | string | Base URL for arbeidsplassen (constant). |
+| store_html | boolean | If true, store the entire HTML content of each job advertisement. If false, only store data represented in the xpaths function. |
 | buffer_size | int | Number of job advertisements to store in memory before writing them to file. |
 | time_sleep_lower | float | Minimum sleep length between scraping one job advertisement. |
 | time_sleep_upper | float | Maximum sleep length between scraping one job advertisement. |

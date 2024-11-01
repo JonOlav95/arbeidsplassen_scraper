@@ -18,7 +18,8 @@ from process_data import process_data, store_data
 def scrape_single_ad(url: str,
                      xpaths: dict,
                      headers: dict,
-                     uuid: str) -> dict:
+                     uuid: str,
+                     store_html: bool) -> dict:
     """Extract the data from a single ad.
 
     Function scrapes the HTML elements.
@@ -27,6 +28,8 @@ def scrape_single_ad(url: str,
         url: Url where the ad is.
         xpaths: xpaths for the given type of ad.
         headers: Request headers.
+        uuid: UUID of the ad.
+        store_html: Store entire HTML of the URL.
 
     Returns:
         A dictionary containing all scraped data as HTML elements.
@@ -44,6 +47,9 @@ def scrape_single_ad(url: str,
         'scrape_time': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
         'uuid': uuid
     }
+
+    if store_html:
+        result_dict['html'] = response.text
 
     for k, v in xpaths.items():
         content = tree.xpath(v)
@@ -193,7 +199,8 @@ def main():
         result = scrape_single_ad(url=url,
                                   headers=headers,
                                   xpaths=xpaths,
-                                  uuid=uuid)
+                                  uuid=uuid,
+                                  store_html=flags['store_html'])
 
         if not result:
             continue
