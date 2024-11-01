@@ -34,3 +34,4 @@ Parameters can be adjusted in `parameters.yml`
 - [ ] Dynamic headers (?).
 - [ ] Support proxies.
 - [ ] Daily automatic status update on github if xpaths/script is broken, as is the nature of web scraping.
+- [ ] Extract elements susceptible to change from the code (e.g. url format, regex format).

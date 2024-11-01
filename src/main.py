@@ -72,7 +72,8 @@ def scrape_single_ad(url: str,
 
 def iterate_pages(headers: dict,
                   toggles: list,
-                  base_url: str) -> Generator[str]:
+                  base_url: str,
+                  max_pages=100) -> Generator[str]:
     """Iterate one page filled with ads.
 
     Iterate pages goes through all pages and extract ads
@@ -84,6 +85,7 @@ def iterate_pages(headers: dict,
         headers: Request headers.
         toggles: A list of all possible checkbox toggles.
         base_url: Base URL used repetitively.
+        max_pages: Max number of pages for each filter.
 
     Returns:
         URL of one AD to be scraped.
@@ -92,7 +94,7 @@ def iterate_pages(headers: dict,
         
     for t in toggles:
         logging.info(f'SCRAPING ARBEIDSPLASSEN WITH {t}')
-        for page_number in range(100):
+        for page_number in range(max_pages):
             logging.info(f'SCRAPING PAGE {page_number + 1}')
 
             time.sleep(random.uniform(1.5, 2.5))
