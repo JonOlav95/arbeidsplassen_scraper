@@ -10,7 +10,7 @@ The script includes the code to clean and store the data in CSV files.
 
 Only tested on Python 3.11
 
-Run program: `python main.py`
+Run program: `python scr/main.py`
 
 # Parameters
 Parameters can be adjusted in `parameters.yml`
