@@ -3,12 +3,9 @@ import re
 import logging
 import time
 import random
-import requests
 import yaml
-import os
-import pandas as pd
-from collections.abc import Generator
 
+from collections.abc import Generator
 from datetime import datetime
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -40,10 +37,6 @@ def scrape_single_ad(url: str,
     if not response:
         return
 
-    if response.status_code != 200:
-        logging.error(f'SCRAPE PAGE RESPONSE CODE {response.status_code}, URL: {url}')
-        return
-
     tree = etree.HTML(response.text)
 
     result_dict = {
@@ -69,53 +62,6 @@ def scrape_single_ad(url: str,
         logging.info(f'TITLE: {title.rstrip()}')
 
     return result_dict
-
-
-def scrape_ads_list(ad_urls: list,
-                    scraped_codes: list,
-                    headers: dict,
-                    xpaths: dict,
-                    scrape_folder: str,
-                    curr_time: str,
-                    store_data_bool=True) -> None:
-    """Scrape a list of ads and store the data
-    
-    Args:
-        ad_urls: List of AD urls to scrape.
-        scraped_codes: Regex pattern for finding id in url.
-        headers: Request headers.
-        xpaths: XPATHS used to grab the correct data.
-        scrape_folder: Where to store the scrape data.
-        curr_time: Start time of scrape, used for filename.
-        toggle: Current button toggle for search.
-        store_data_bool: Bool deciding to save the data or not.
-    """
-    uuid_pattern = re.compile(r'[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}')
-    page_ads = []
-
-    for url in ad_urls:
-        uuid = uuid_pattern.search(url).group(0)
-
-        # Check if ad has been scraped before.
-        if uuid in scraped_codes:
-            logging.info(f'ALREADY SCRAPED: {url}')
-            continue
-
-        scraped_codes.append(uuid)
-        result = scrape_single_ad(url=url,
-                                  headers=headers,
-                                  xpaths=xpaths,
-                                  uuid=uuid)
-
-        if not result:
-            continue
-
-        page_ads.append(result)
-        time.sleep(random.uniform(0.75, 1.5))
-
-    if store_data_bool:
-        processed_ads = process_data(page_ads)
-        store_data(processed_ads, scrape_folder, curr_time)
 
 
 def iterate_pages(headers: dict,
@@ -255,7 +201,7 @@ def main():
         buffer_data.append(result)
         time.sleep(random.uniform(flags['time_sleep_lower'], flags['time_sleep_upper']))
 
-        if len(buffer_data) > flags['buffer_size']:
+        if len(buffer_data) >= flags['buffer_size']:
             processed_ads = process_data(buffer_data)
             store_data(processed_ads, flags['scrape_folder'], curr_time)
             buffer_data = []
