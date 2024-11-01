@@ -5,5 +5,8 @@ scrape_folder: 'scrapes'
 log_folder: 'logs'
 
 
-sleep_time_max: 1.5
-sleep_time_min: 0.5
+base_url: 'https://arbeidsplassen.nav.no'
+buffer_size: 50
+
+time_sleep_lower: 0.75
+time_sleep_upper: 1.5

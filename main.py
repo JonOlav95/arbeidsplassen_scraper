@@ -7,12 +7,14 @@ import requests
 import yaml
 import os
 import pandas as pd
+from collections.abc import Generator
 
 from datetime import datetime
 from bs4 import BeautifulSoup
 from lxml import etree
 
 from misc_helpers import load_random_headers, init_logging, previously_scraped, arbeidsplassen_xpaths
+from requests_wrapper import requests_wrapper
 from process_data import process_data, store_data
 
 
@@ -33,17 +35,16 @@ def scrape_single_ad(url: str,
         A dictionary containing all scraped data as HTML elements.
         This dict represents an row in the CSV result file.
     """
-    try:
-        r = requests.get(url, headers=headers)
-    except requests.exceptions.ConnectionError as e:
-        logging.error(f'ConnectionError for {e}')
+    response = requests_wrapper(url=url, headers=headers)
+
+    if not response:
         return
 
-    if r.status_code != 200:
-        logging.error(f'SCRAPE PAGE RESPONSE CODE {r.status_code}, URL: {url}')
+    if response.status_code != 200:
+        logging.error(f'SCRAPE PAGE RESPONSE CODE {response.status_code}, URL: {url}')
         return
 
-    tree = etree.HTML(r.text)
+    tree = etree.HTML(response.text)
 
     result_dict = {
         'url': url,
@@ -117,12 +118,9 @@ def scrape_ads_list(ad_urls: list,
         store_data(processed_ads, scrape_folder, curr_time)
 
 
-def iterate_pages(curr_time: str,
-                  scrape_folder: str,
-                  headers: dict,
-                  scraped_codes: list,
-                  base_url: str,
-                  toggle: str) -> None:
+def iterate_pages(headers: dict,
+                  toggles: list,
+                  base_url: str) -> Generator[str]:
     """Iterate one page filled with ads.
 
     Iterate pages goes through all pages and extract ads
@@ -131,56 +129,49 @@ def iterate_pages(curr_time: str,
     end of the page scrape.
 
     Args:
-        curr_time: Start time of scrape, used for filename.
-        folder: Where to store the scrape data.
         headers: Request headers.
-        scraped_codes: Regex pattern for finding id in url.
+        toggles: A list of all possible checkbox toggles.
         base_url: Base URL used repetitively.
-        toggle: Current button toggle for search.
+
+    Returns:
+        URL of one AD to be scraped.
     """
-    xpaths = arbeidsplassen_xpaths()
     ad_pattern = re.compile(r'(\/stillinger\/stilling\/.+)')
-
-    for page_number in range(100):
-        logging.info(f'SCRAPING PAGE {page_number + 1}')
-
-        time.sleep(random.uniform(1.5, 2.5))
-
-        if page_number == 0:
-            url = f'{base_url}/stillinger?size=100&{toggle}&v=2'
-        else:
-            url = f'{base_url}/stillinger?from={page_number * 100}&size=100&{toggle}&v=2'
-
-        r = requests.get(url, headers=headers)
-
-        if r.status_code == 400:
-            return
-        elif r.status_code != 200:
-            logging.error(f'ITERATE PAGE RESPONSE CODE {r.status_code}, URL: {url}')
-            continue
-
-        headers['Referer'] = url
-        soup = BeautifulSoup(r.text, 'html.parser')
-
-        a_tags = soup.find_all('a')
-
-        all_urls = [u for u in a_tags if isinstance(u, str)]
-        all_urls = [u.get('href') for u in a_tags]
-
-        ad_urls = [base_url + u for u in all_urls if ad_pattern.search(u)]
-
-        if not ad_urls:
-            logging.info('NO ADS ON PAGE')
-            return
         
-        # All AD ad for the page is collected, call function to scrape the data
-        # for each ad.
-        scrape_ads_list(ad_urls,
-                        scraped_codes,
-                        headers,
-                        xpaths,
-                        scrape_folder,
-                        curr_time)
+    for t in toggles:
+        logging.info(f'SCRAPING ARBEIDSPLASSEN WITH {t}')
+        for page_number in range(100):
+            logging.info(f'SCRAPING PAGE {page_number + 1}')
+
+            time.sleep(random.uniform(1.5, 2.5))
+
+            if page_number == 0:
+                url = f'{base_url}/stillinger?size=100&{t}&v=2'
+            else:
+                url = f'{base_url}/stillinger?from={page_number * 100}&size=100&{t}&v=2'
+            
+            response = requests_wrapper(url=url, headers=headers)
+
+            if not response:
+                continue
+
+            headers['Referer'] = url
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            a_tags = soup.find_all('a')
+            
+            all_urls = [u for u in a_tags if isinstance(u, str)]
+            all_urls = [u.get('href') for u in a_tags]
+
+            ad_urls = [base_url + u for u in all_urls if ad_pattern.search(u)]
+
+            if not ad_urls:
+                logging.info('NO ADS ON PAGE')
+                break
+            
+            yield from ad_urls
+
+        logging.info(f'FINISHED SCRAPING ARBEIDSPLASSEN WITH {t}')
     
 
 def get_toggles(full_scrape: bool,
@@ -207,13 +198,12 @@ def get_toggles(full_scrape: bool,
     else:
         url = f'{base_url}/stillinger'
 
-        try:
-            r = requests.get(url, headers=headers)
-        except requests.exceptions.ConnectionError as e:
-            logging.error(f'ConnectionError for {e}')
+        response = requests_wrapper(url=url, headers=headers)
+
+        if not response:
             return
 
-        soup = BeautifulSoup(r.text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
         inputs = soup.find_all('input')
         inputs = [input_tag for input_tag in inputs
                   if 'checkbox' or 'radio' in input_tag.get('id', '')]
@@ -223,7 +213,7 @@ def get_toggles(full_scrape: bool,
 
         if 'q=' in toggles:
             toggles.remove('q=')
-        
+
         return toggles
 
 
@@ -235,27 +225,41 @@ def main():
     init_logging(f'{flags["log_folder"]}/arbeidsplassen_{curr_time}.log')
 
     headers = load_random_headers()
-    base_url = 'https://arbeidsplassen.nav.no'
+    uuid_pattern = re.compile(r'[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}')
+    xpaths = arbeidsplassen_xpaths()
+    toggles = get_toggles(flags['full_scrape'], flags['base_url'], headers)
+    buffer_data = []
 
-    toggles = get_toggles(flags['full_scrape'], base_url, headers)
-
-    for t in toggles:
-        logging.info(f'SCRAPING ARBEIDSPLASSEN WITH {t}')
-
-        if flags['ignore_previously_scraped']:
-            scraped_urls = previously_scraped(scrape_folder=flags['scrape_folder'], n_files=50)
-        else:
-            scraped_urls = []
-
-        iterate_pages(curr_time=curr_time,
-                      scrape_folder=flags['scrape_folder'],
-                      headers=headers,
-                      scraped_codes=scraped_urls,
-                      base_url=base_url,
-                      toggle=t)
-
-        logging.info(f'FINISHED SCRAPING ARBEIDSPLASSEN WITH {t}')
+    if flags['ignore_previously_scraped']:
+        scraped_urls = previously_scraped(scrape_folder=flags['scrape_folder'], n_files=50)
+    else:
+        scraped_urls = []
     
+    for url in iterate_pages(headers=headers, toggles=toggles, base_url=flags['base_url']):
+        uuid = uuid_pattern.search(url).group(0)
+
+        # Check if ad has been scraped before.
+        if uuid in scraped_urls:
+            logging.info(f'ALREADY SCRAPED: {url}')
+            continue
+
+        scraped_urls.append(uuid)
+        result = scrape_single_ad(url=url,
+                                  headers=headers,
+                                  xpaths=xpaths,
+                                  uuid=uuid)
+
+        if not result:
+            continue
+        
+        buffer_data.append(result)
+        time.sleep(random.uniform(flags['time_sleep_lower'], flags['time_sleep_upper']))
+
+        if len(buffer_data) > flags['buffer_size']:
+            processed_ads = process_data(buffer_data)
+            store_data(processed_ads, flags['scrape_folder'], curr_time)
+            buffer_data = []
+
 
 if __name__ == "__main__":
     main()

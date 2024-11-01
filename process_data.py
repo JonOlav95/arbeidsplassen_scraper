@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 
 
 def dl_to_dict(dl_html):
-
     dl_html = BeautifulSoup(dl_html, 'html.parser')
     dl_element = dl_html.find('dl')
 
@@ -47,7 +46,6 @@ def process_datapoint(datapoint):
 
 
 def process_data(page_ads):
-
     processed_list = []
 
     for ad in page_ads:
