@@ -1,13 +1,11 @@
 # About
 Python script for scraping job advertisements from https://arbeidsplassen.nav.no/stillinger
 
-The script includes the code to clean and store the data in CSV files.
+The script includes the code to clean and store the data in CSV files. Sample data for 10 job advertisements can be found in logs/scrapes.
 
 
 Use the code responsibly. The parameters `full_scrape` and `ignore_previously_scrape` are added as to not unnecessarily burden the server. 
 # Setup
-`mkdir scrapes`\
-`mkdir logs`\
 `pip install -r requirements.txt`
 
 Only tested on Python 3.11
