@@ -33,10 +33,13 @@ def request_with_retrying(url: str, headers: dict):
         raise
 
 
-def requests_wrapper(url: str, headers: dict):
+def requests_wrapper(url: str, headers: dict, raise_error=False):
     """Request get wrapper, returns None on failed request."""
     try:
         return request_with_retrying(url, headers)
     except Exception as e:
         logging.error(f'Request failed after retries: {e}')
+        if raise_error:
+            raise
+
         return None

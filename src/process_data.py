@@ -45,7 +45,7 @@ def process_datapoint(datapoint):
     return datapoint
 
 
-def process_data(page_ads):
+def process_data(page_ads: list) -> list:
     processed_list = []
 
     for ad in page_ads:

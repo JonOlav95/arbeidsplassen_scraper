@@ -25,7 +25,7 @@ def arbeidsplassen_xpaths() -> dict:
     return xpaths
 
 
-def load_random_headers():
+def load_random_headers() -> dict:
     """Set up headers with a random user agent."""
     user_agents = [
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2859.0 Safari/537.36',
@@ -51,7 +51,7 @@ def load_random_headers():
     return headers
 
 
-def init_logging(filename):
+def init_logging(filename: str) -> None:
     """Initiate a logging file in folder logs"""
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -83,7 +83,7 @@ def extract_datetime(filename: str) -> str:
 
 
 def previously_scraped(scrape_folder: str,
-                       n_files: str):
+                       n_files: int) -> list:
     """
     Checks previously scraped files to avoid scraping the same
     ad multiple times. The number of files to check can be customized.

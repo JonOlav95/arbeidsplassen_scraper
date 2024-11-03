@@ -1,4 +1,3 @@
-
 import re
 import logging
 import time
@@ -19,7 +18,7 @@ def scrape_single_ad(url: str,
                      xpaths: dict,
                      headers: dict,
                      uuid: str,
-                     store_html: bool) -> dict:
+                     store_html: bool) -> dict | None:
     """Extract the data from a single ad.
 
     Function scrapes the HTML elements.
@@ -55,7 +54,7 @@ def scrape_single_ad(url: str,
         content = tree.xpath(v)
 
         if not content:
-            result_dict[k] = None
+            result_dict[k] = ''
         else:
             result_dict[k] = etree.tostring(content[0],
                                             method='html',
@@ -152,10 +151,7 @@ def get_toggles(full_scrape: bool,
     else:
         url = f'{base_url}/stillinger'
 
-        response = requests_wrapper(url=url, headers=headers)
-
-        if not response:
-            return
+        response = requests_wrapper(url=url, headers=headers, raise_error=True)
 
         soup = BeautifulSoup(response.text, 'html.parser')
         inputs = soup.find_all('input')
